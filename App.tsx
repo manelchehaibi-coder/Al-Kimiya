@@ -3,12 +3,17 @@ import { ELEMENTS, CATEGORY_LABELS, ELEMENT_CATEGORIES_COLORS } from './constant
 import { ChemicalElement, ElementCategory } from './types';
 import { ElementCard } from './components/ElementCard';
 import { ElementModal } from './components/ElementModal';
-import { Search, Filter, Beaker } from 'lucide-react';
+import { MixingLab } from './components/MixingLab';
+import { Search, Filter, Beaker, FlaskConical, Atom } from 'lucide-react';
 
 const App: React.FC = () => {
   const [selectedElement, setSelectedElement] = useState<ChemicalElement | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<ElementCategory | 'all'>('all');
+  
+  // New States for Lab Mode
+  const [isLabMode, setIsLabMode] = useState(false);
+  const [labElements, setLabElements] = useState<ChemicalElement[]>([]);
 
   const filteredElements = useMemo(() => {
     return ELEMENTS.filter(el => {
@@ -24,33 +29,60 @@ const App: React.FC = () => {
     });
   }, [searchQuery, selectedCategory]);
 
-  // Grid Layout Logic
-  // We construct a 18x10 grid (approx)
-  // We need to render empty cells where there are no elements to maintain the shape if we map strictly by index.
-  // However, positioning `ElementCard` with `gridColumn` / `gridRow` style is more robust.
-  // So we just render the filtered list inside a container that has `display: grid`.
+  const handleElementClick = (element: ChemicalElement) => {
+      if (isLabMode) {
+          // Toggle selection for lab
+          setLabElements(prev => {
+              const exists = prev.find(e => e.number === element.number);
+              if (exists) {
+                  return prev.filter(e => e.number !== element.number);
+              }
+              if (prev.length >= 5) return prev; // Max 5 elements
+              return [...prev, element];
+          });
+      } else {
+          // Open details
+          setSelectedElement(element);
+      }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white pb-20">
+    <div className="min-h-screen bg-slate-950 text-white pb-32">
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500 rounded-lg">
-                <Beaker className="text-white" size={24} />
+            <div className={`p-2 rounded-lg transition-colors ${isLabMode ? 'bg-purple-600' : 'bg-emerald-500'}`}>
+                {isLabMode ? <FlaskConical className="text-white" size={24} /> : <Atom className="text-white" size={24} />}
             </div>
             <div>
                 <h1 className="text-xl font-bold tracking-tight text-white">Al-Kimiya</h1>
-                <p className="text-xs text-slate-400 font-arabic">الجدول الدوري التفاعلي</p>
+                <p className="text-xs text-slate-400 font-arabic">{isLabMode ? 'مختبر الاندماج' : 'الجدول الدوري التفاعلي'}</p>
             </div>
           </div>
           
-          <div className="hidden md:flex items-center gap-4 flex-1 justify-end max-w-md">
-            <div className="relative w-full">
+          <div className="hidden md:flex items-center gap-4 flex-1 justify-end max-w-2xl">
+            {/* Mode Toggle */}
+            <div className="bg-slate-800 p-1 rounded-full border border-slate-700 flex mr-4">
+                <button 
+                    onClick={() => setIsLabMode(false)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all ${!isLabMode ? 'bg-emerald-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <Atom size={14} /> Explorer
+                </button>
+                <button 
+                    onClick={() => setIsLabMode(true)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all ${isLabMode ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
+                >
+                    <FlaskConical size={14} /> Labo
+                </button>
+            </div>
+
+            <div className="relative w-full max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                 <input 
                     type="text" 
-                    placeholder="Rechercher (Nom, Symbole, No...)" 
+                    placeholder="Rechercher..." 
                     className="w-full bg-slate-800 border-slate-700 border rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-slate-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -60,8 +92,22 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile Search Bar */}
-      <div className="md:hidden p-4 bg-slate-900 border-b border-slate-800 sticky top-20 z-30">
+      {/* Mobile Controls */}
+      <div className="md:hidden flex flex-col gap-2 p-4 bg-slate-900 border-b border-slate-800 sticky top-20 z-30">
+         <div className="flex bg-slate-800 p-1 rounded-full border border-slate-700">
+             <button 
+                onClick={() => setIsLabMode(false)}
+                className={`flex-1 py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all ${!isLabMode ? 'bg-emerald-500 text-white' : 'text-slate-400'}`}
+            >
+                <Atom size={14} /> Explorer
+            </button>
+            <button 
+                onClick={() => setIsLabMode(true)}
+                className={`flex-1 py-1.5 rounded-full text-xs font-semibold flex items-center justify-center gap-2 transition-all ${isLabMode ? 'bg-purple-600 text-white' : 'text-slate-400'}`}
+            >
+                <FlaskConical size={14} /> Labo
+            </button>
+         </div>
          <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input 
@@ -90,7 +136,7 @@ const App: React.FC = () => {
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors border whitespace-nowrap flex items-center gap-2
                         ${selectedCategory === cat ? 'ring-2 ring-offset-2 ring-offset-slate-950 ring-white' : 'opacity-70 hover:opacity-100'}
-                        ${ELEMENT_CATEGORIES_COLORS[cat].replace('text-slate-900', 'text-white')} // Ensure text contrast in filter
+                        ${ELEMENT_CATEGORIES_COLORS[cat].replace('text-slate-900', 'text-white')}
                     `}
                     style={{ backgroundColor: selectedCategory === cat ? undefined : '' }} 
                 >
@@ -104,28 +150,27 @@ const App: React.FC = () => {
       {/* Main Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 overflow-x-auto">
         <div className="min-w-[800px] relative"> 
-            {/* The grid container */}
             <div className="grid grid-cols-[repeat(18,minmax(0,1fr))] gap-1 sm:gap-2 auto-rows-min">
                 {filteredElements.length === ELEMENTS.length ? (
-                    // If full view, we render with strict positions
                     ELEMENTS.map(element => (
                         <ElementCard 
                             key={element.number} 
                             element={element} 
-                            onClick={setSelectedElement} 
+                            onClick={handleElementClick}
+                            isSelected={isLabMode && labElements.some(e => e.number === element.number)}
                         />
                     ))
                 ) : (
-                    // If filtered, we render as a list (flex wrap or responsive grid)
-                    // We override the grid to be a simple responsive grid for search results
                     <div className="col-span-18 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
                          {filteredElements.map(element => (
-                             // Override style to remove gridColumn/Row for search view
-                            <div key={element.number} onClick={() => setSelectedElement(element)} className="cursor-pointer">
+                            <div key={element.number} onClick={() => handleElementClick(element)} className="cursor-pointer">
                                 <div className={`
                                     ${ELEMENT_CATEGORIES_COLORS[element.category]}
-                                    p-4 rounded-xl shadow-lg hover:scale-105 transition-transform
+                                    p-4 rounded-xl shadow-lg transition-transform
                                     flex flex-col items-center justify-center aspect-square
+                                    ${isLabMode && labElements.some(e => e.number === element.number) 
+                                        ? 'ring-4 ring-emerald-400 ring-offset-2 ring-offset-slate-900 scale-105' 
+                                        : 'hover:scale-105'}
                                 `}>
                                     <span className="text-sm opacity-70 mb-1">{element.number}</span>
                                     <span className="text-3xl font-bold mb-2">{element.symbol}</span>
@@ -142,17 +187,22 @@ const App: React.FC = () => {
                     </div>
                 )}
             </div>
-
-            {/* Placeholder visualization for the empty spaces in full view if needed, 
-                but since we place items specifically with grid-column, the grid handles empty space automatically. 
-            */}
         </div>
       </main>
 
+      {/* Modals & Lab Interface */}
       <ElementModal 
         element={selectedElement} 
         onClose={() => setSelectedElement(null)} 
       />
+
+      {isLabMode && (
+          <MixingLab 
+            selectedElements={labElements} 
+            onRemoveElement={(el) => setLabElements(prev => prev.filter(e => e.number !== el.number))}
+            onClear={() => setLabElements([])}
+          />
+      )}
 
       {/* Footer */}
       <footer className="border-t border-slate-800 mt-12 py-8 text-center text-slate-500 text-sm">

@@ -38,3 +38,16 @@ export interface GeminiElementDetails {
   funFactFrAudio?: string; // Base64 encoded audio for fun fact
   funFactArAudio?: string; // Base64 encoded audio for fun fact
 }
+
+export interface ChemicalCompound {
+  success: boolean;
+  nameFr: string;
+  nameAr: string;
+  formula: string;
+  descriptionFr: string;
+  descriptionAr: string;
+  state: string; // e.g., "Liquid", "Gas"
+  color?: string; // Hex code or generic name
+  errorFr?: string; // If no reaction is possible
+  errorAr?: string;
+}

@@ -1,5 +1,5 @@
 {
-  "name": "Al-Kimiya: Tableau Périodique Interactif",
+  "name": "Al-Kimiya: الكيمياء",
   "description": "Un tableau périodique interactif et bilingue (Français/Arabe) alimenté par l'IA Gemini pour l'apprentissage de la chimie.",
   "requestFramePermissions": []
 }

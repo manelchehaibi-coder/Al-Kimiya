@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ChemicalElement, GeminiElementDetails } from '../types';
+import { ChemicalElement, GeminiElementDetails, ChemicalCompound } from '../types';
 
 const getClient = () => {
     const apiKey = process.env.API_KEY;
@@ -65,3 +65,48 @@ export const fetchElementDetails = async (element: ChemicalElement): Promise<Gem
         throw error;
     }
 };
+
+export const combineElements = async (elements: ChemicalElement[]): Promise<ChemicalCompound> => {
+    const ai = getClient();
+    const symbols = elements.map(e => e.symbol).join(', ');
+    
+    // Prompt engineered to be forgiving with stoichiometry (e.g., H + O -> Water)
+    const prompt = `You are a chemistry engine. The user has combined these elements: [${symbols}]. 
+    Determine the most likely chemical compound they are trying to create (ignore perfect stoichiometry, assume standard conditions).
+    For example, if inputs are H and O, assume H2O (Water). If Na and Cl, assume NaCl.
+    If the combination creates a known compound, return success: true.
+    If these elements are Noble Gases or do not react typically under standard conditions, return success: false.
+    Return the result in JSON.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        success: { type: Type.BOOLEAN },
+                        nameFr: { type: Type.STRING, description: "Name of compound in French" },
+                        nameAr: { type: Type.STRING, description: "Name of compound in Arabic" },
+                        formula: { type: Type.STRING, description: "Chemical formula like H2O" },
+                        descriptionFr: { type: Type.STRING, description: "Brief description of the compound/reaction in French" },
+                        descriptionAr: { type: Type.STRING, description: "Brief description of the compound/reaction in Arabic" },
+                        state: { type: Type.STRING, description: "State at room temp (Liquid, Gas, Solid)" },
+                        errorFr: { type: Type.STRING, description: "Reason for failure in French (optional)" },
+                        errorAr: { type: Type.STRING, description: "Reason for failure in Arabic (optional)" },
+                    },
+                    required: ["success"],
+                },
+            },
+        });
+
+         const text = response.text;
+        if (!text) throw new Error("No response from Gemini");
+        return JSON.parse(text) as ChemicalCompound;
+    } catch (error) {
+        console.error("Gemini Mixing Error:", error);
+        throw error;
+    }
+}
