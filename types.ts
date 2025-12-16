@@ -31,4 +31,10 @@ export interface GeminiElementDetails {
   applicationsAr: string[];
   funFactFr: string;
   funFactAr: string;
+  audioFr?: string; // Base64 encoded audio for name
+  audioAr?: string; // Base64 encoded audio for name
+  descriptionFrAudio?: string; // Base64 encoded audio for description
+  descriptionArAudio?: string; // Base64 encoded audio for description
+  funFactFrAudio?: string; // Base64 encoded audio for fun fact
+  funFactArAudio?: string; // Base64 encoded audio for fun fact
 }

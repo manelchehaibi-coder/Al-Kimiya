@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { ChemicalElement, GeminiElementDetails } from '../types';
 
 const getClient = () => {
@@ -8,6 +8,27 @@ const getClient = () => {
         throw new Error("Clé API manquante. Veuillez configurer l'API Key.");
     }
     return new GoogleGenAI({ apiKey });
+};
+
+export const fetchAudioForText = async (text: string): Promise<string> => {
+    const ai = getClient();
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+            },
+        });
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!base64Audio) {
+            throw new Error("No audio data received from Gemini TTS.");
+        }
+        return base64Audio;
+    } catch (error) {
+        console.error(`Gemini TTS API Error for text "${text}":`, error);
+        throw error;
+    }
 };
 
 export const fetchElementDetails = async (element: ChemicalElement): Promise<GeminiElementDetails> => {
